@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>미분계수의 기하적 의미</title>
+<style>
+  :root{
+    --paper: #F3F1EC;
+    --panel: #FFFFFF;
+    --ink: #22283A;
+    --ink-soft: #565E76;
+    --line: #DAD5C8;
+    --curve: #2B3A67;
+    --secant: #D9603B;
+    --tangent: #1E8F79;
+    --grid: #E4DFD1;
+    --accent-bg: #ECE6D6;
+  }
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; animation:none !important;}
+  }
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .wrap{
+    max-width:1040px;
+    margin:0 auto;
+    padding:40px 24px 80px;
+  }
+  header{
+    margin-bottom:32px;
+  }
+  h1{
+    font-family:"Georgia","Nanum Myeongjo","Batang",serif;
+    font-weight:700;
+    font-size:clamp(26px,4vw,36px);
+    letter-spacing:-0.01em;
+    margin:0 0 10px;
+    color:var(--ink);
+  }
+  .lede{
+    font-size:15.5px;
+    line-height:1.7;
+    color:var(--ink-soft);
+    max-width:640px;
+    margin:0;
+  }
+  .lede b{color:var(--ink); font-weight:600;}
+
+  .stage{
+    display:grid;
+    grid-template-columns:1.15fr 0.85fr;
+    gap:24px;
+    margin-top:32px;
+  }
+  @media (max-width:820px){
+    .stage{grid-template-columns:1fr;}
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px;
+  }
+
+  .graph-caption{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin:14px 2px 0;
+    line-height:1.6;
+  }
+
+  svg#graph{
+    width:100%;
+    height:auto;
+    display:block;
+    touch-action:none;
+  }
+
+  .curve-label, .line-label{
+    font-family:"Georgia","Nanum Myeongjo",serif;
+    font-style:italic;
+  }
+
+  .readout{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  .readout h2{
+    font-family:"Georgia","Nanum Myeongjo","Batang",serif;
+    font-size:18px;
+    margin:0 0 2px;
+    font-weight:700;
+  }
+
+  .controls{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding-bottom:14px;
+    border-bottom:1px solid var(--line);
+  }
+
+  .dir-row{
+    display:flex;
+    gap:8px;
+  }
+
+  .dir-btn{
+    flex:1;
+    padding:9px 8px;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:var(--accent-bg);
+    color:var(--ink);
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .dir-btn.active{
+    background:var(--secant);
+    border-color:var(--secant);
+    color:#fff;
+  }
+
+  .slider-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  input[type="range"]{
+    flex:1;
+    accent-color:var(--secant);
+  }
+  .dx-val{
+    font-variant-numeric:tabular-nums;
+    font-size:14px;
+    min-width:64px;
+    text-align:right;
+    color:var(--ink-soft);
+  }
+
+  .play-row{
+    display:flex;
+    gap:8px;
+  }
+  .play-btn{
+    flex:1;
+    padding:9px 8px;
+    border-radius:9px;
+    border:1px solid var(--curve);
+    background:var(--curve);
+    color:#fff;
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .play-btn:active{opacity:.85;}
+
+  .stat-line{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:14.5px;
+    padding:6px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .stat-line:last-child{border-bottom:none;}
+  .stat-line .k{color:var(--ink-soft);}
+  .stat-line .v{
+    font-variant-numeric:tabular-nums;
+    font-weight:600;
+  }
+
+  .limit-box{
+    margin-top:4px;
+    padding:14px 16px;
+    border-radius:10px;
+    background:var(--accent-bg);
+    font-size:14.5px;
+    line-height:1.65;
+    transition:background .25s ease, box-shadow .25s ease;
+  }
+  .limit-box.near{
+    background:#E3F3EE;
+    box-shadow:0 0 0 1.5px var(--tangent) inset;
+  }
+  .limit-box .m{
+    font-weight:700;
+    color:var(--tangent);
+  }
+
+  section.explain{
+    margin-top:56px;
+  }
+  section.explain h2{
+    font-family:"Georgia","Nanum Myeongjo","Batang",serif;
+    font-size:22px;
+    margin:0 0 14px;
+  }
+
+  .explain-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+    align-items:start;
+  }
+  @media (max-width:820px){
+    .explain-grid{grid-template-columns:1fr;}
+  }
+  .explain-grid p{
+    font-size:15px;
+    line-height:1.8;
+    color:var(--ink-soft);
+    margin:0 0 14px;
+  }
+  .explain-grid p b{color:var(--ink);}
+
+  .formula-box{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:20px 22px;
+    font-size:15px;
+    line-height:1.9;
+  }
+  .formula-box .title{
+    font-weight:700;
+    margin-bottom:8px;
+    display:block;
+  }
+  .formula{
+    font-family:"Georgia","Cambria",serif;
+    font-style:italic;
+    font-size:17px;
+    margin:6px 0;
+  }
+
+  svg#genGraph{width:100%; height:auto; display:block;}
+
+  footer{
+    margin-top:48px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>미분계수의 기하적 의미는 무엇일까?</h1>
+    <p class="lede">
+      곡선 <b>y = x²</b> 위의 점 Q(a, a²)가 점 P(1, 1)에 가까워질 때,
+      직선 PQ의 기울기가 어떻게 변하는지 슬라이더로 직접 움직여 확인해 보세요.
+      Δx가 0에 한없이 가까워지면 직선 PQ의 기울기도 하나의 값에 한없이 가까워집니다.
+    </p>
+  </header>
+
+  <div class="stage">
+
+    <div class="panel">
+      <svg id="graph" viewBox="0 0 520 420" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="plotClip">
+            <rect x="45" y="15" width="460" height="370"></rect>
+          </clipPath>
+        </defs>
+
+        <!-- axes -->
+        <g id="axes" stroke="#B9B2A0" stroke-width="1"></g>
+        <g id="gridlines" stroke="#E4DFD1" stroke-width="1"></g>
+
+        <g clip-path="url(#plotClip)">
+          <path id="curvePath" fill="none" stroke="var(--curve)" stroke-width="2.5"></path>
+          <line id="tangentLine" stroke="var(--tangent)" stroke-width="1.6" stroke-dasharray="6 5" opacity="0.55"></line>
+          <line id="dxLine" stroke="#8A8371" stroke-width="1.3" stroke-dasharray="4 4"></line>
+          <line id="dyLine" stroke="#8A8371" stroke-width="1.3" stroke-dasharray="4 4"></line>
+          <line id="secantLine" stroke="var(--secant)" stroke-width="2.4"></line>
+        </g>
+        <text id="dxLabel" font-size="13" fill="#75705F"></text>
+        <text id="dyLabel" font-size="13" fill="#75705F"></text>
+
+        <!-- fixed point P -->
+        <circle id="pointP" r="4.5" fill="#1A1A1A"></circle>
+        <text id="labelP" class="curve-label" font-size="14" fill="#1A1A1A"></text>
+
+        <!-- moving point Q -->
+        <circle id="pointQ" r="4.5" fill="var(--secant)"></circle>
+        <text id="labelQ" class="curve-label" font-size="13" fill="var(--secant)"></text>
+
+        <text id="curveTag" class="curve-label" font-size="14" fill="var(--curve)">y = x²</text>
+      </svg>
+      <p class="graph-caption">
+        검은 점 P(1, 1)은 고정되어 있습니다. 붉은 점 Q는 곡선 위를 움직이며,
+        붉은 직선은 두 점을 지나는 <b>할선(secant line)</b> PQ, 초록 점선은 P에서의
+        <b>접선</b>을 나타냅니다.
+      </p>
+    </div>
+
+    <div class="panel readout">
+      <h2>직접 움직여 보기</h2>
+
+      <div class="controls">
+        <div class="dir-row">
+          <button class="dir-btn active" id="dirPos" type="button">Q가 오른쪽에서 접근 (Δx &gt; 0)</button>
+          <button class="dir-btn" id="dirNeg" type="button">Q가 왼쪽에서 접근 (Δx &lt; 0)</button>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="dxSlider" min="0.03" max="2.2" step="0.005" value="1.6">
+          <span class="dx-val" id="dxAbsVal">|Δx| = 1.60</span>
+        </div>
+        <div class="play-row">
+          <button class="play-btn" id="playBtn" type="button">Δx를 0으로 서서히 줄이기 ▶</button>
+        </div>
+      </div>
+
+      <div class="stat-line"><span class="k">a</span><span class="v">1</span></div>
+      <div class="stat-line"><span class="k">Δx</span><span class="v" id="statDx">1.6000</span></div>
+      <div class="stat-line"><span class="k">Q(a+Δx, f(a+Δx))</span><span class="v" id="statQ">(2.600, 6.760)</span></div>
+      <div class="stat-line"><span class="k">Δy = f(a+Δx) − f(a)</span><span class="v" id="statDy">5.7600</span></div>
+      <div class="stat-line"><span class="k">직선 PQ의 기울기 Δy/Δx</span><span class="v" id="statSlope">3.6000</span></div>
+
+      <div class="limit-box" id="limitBox">
+        Δx → 0 이면, 직선 PQ의 기울기는 <span class="m" id="limitTarget">2</span>에
+        한없이 가까워집니다. 이 값이 바로 점 P(1, 1)에서 곡선 y = x²에 접하는
+        접선의 기울기, 즉 <b>미분계수</b> f′(1)입니다.
+      </div>
+    </div>
+
+  </div>
+
+  <section class="explain">
+    <h2>일반적인 곡선에서는?</h2>
+    <div class="explain-grid">
+      <div>
+        <p>
+          함수 <b>f(x)</b>에서 x의 값이 a에서 a+Δx까지 변할 때, 평균변화율
+          Δy/Δx는 곡선 y = f(x) 위의 두 점 P(a, f(a)), Q(a+Δx, f(a+Δx))를
+          지나는 직선 PQ의 기울기와 같습니다.
+        </p>
+        <p>
+          점 P를 고정했을 때 Δx → 0이면 점 Q는 곡선을 따라 점 P에 한없이
+          가까워지고, 직선 PQ는 점 P를 지나면서 기울기가
+          <b>lim<sub>Δx→0</sub> Δy/Δx</b>인 직선 l에 한없이 가까워집니다.
+        </p>
+        <p>
+          이 직선 l을 곡선 y = f(x) 위의 점 P에서의 <b>접선</b>이라 하고,
+          점 P를 이 접선의 <b>접점</b>이라고 합니다.
+        </p>
+      </div>
+
+      <svg id="genGraph" viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg">
+        <g id="genAxes" stroke="#B9B2A0" stroke-width="1"></g>
+        <path id="genCurve" fill="none" stroke="var(--curve)" stroke-width="2.5"></path>
+        <line id="genTangent" stroke="var(--tangent)" stroke-width="1.6" stroke-dasharray="6 5" opacity="0.6"></line>
+        <line id="genSecant" stroke="var(--secant)" stroke-width="2.2"></line>
+        <line id="genDx" stroke="#B9B2A0" stroke-width="1" stroke-dasharray="3 3"></line>
+        <line id="genDy" stroke="#B9B2A0" stroke-width="1" stroke-dasharray="3 3"></line>
+        <circle id="genP" r="4.5" fill="#1A1A1A"></circle>
+        <circle id="genQ" r="4.5" fill="var(--secant)"></circle>
+        <g id="genLabels" font-family="Georgia, 'Nanum Myeongjo', serif"></g>
+      </svg>
+    </div>
+
+    <div class="formula-box" style="margin-top:20px;">
+      <span class="title">미분계수와 접선의 기울기</span>
+      함수 y = f(x)는 x = a에서 미분가능하므로 lim<sub>Δx→0</sub> Δy/Δx의 값이 존재합니다.
+      이 극한값을 함수 f(x)의 x = a에서의 <b>미분계수</b>라 하고, 기호로
+      <div class="formula">f′(a) = lim<sub>Δx→0</sub> Δy/Δx = lim<sub>Δx→0</sub> [f(a+Δx) − f(a)] / Δx</div>
+      와 같이 나타냅니다. 이는 곡선 y = f(x) 위의 점 P(a, f(a))에서의 접선 l의 기울기와 같습니다.
+    </div>
+  </section>
+
+  <footer>y = x² 위의 점 P(1, 1)을 예로 든 상호작용 그래프 · 슬라이더로 Δx를 조절해 보세요</footer>
+</div>
+
+<script>
+(function(){
+  const a = 1;
+  const f = x => x * x;
+  const fa = f(a);
+
+  // domain / plot mapping
+  const xMin = -1.2, xMax = 3.4, yMin = -1.4, yMax = 7.2;
+  const left = 45, top = 15, plotW = 460, plotH = 370;
+  const bottom = top + plotH; // 385
+
+  function toX(x){ return left + (x - xMin) / (xMax - xMin) * plotW; }
+  function toY(y){ return bottom - (y - yMin) / (yMax - yMin) * plotH; }
+
+  const svgNS = "http://www.w3.org/2000/svg";
+  const axesG = document.getElementById('axes');
+  const gridG = document.getElementById('gridlines');
+
+  // gridlines + axis ticks
+  for(let gx = Math.ceil(xMin); gx <= Math.floor(xMax); gx++){
+    const l = document.createElementNS(svgNS,'line');
+    l.setAttribute('x1', toX(gx)); l.setAttribute('x2', toX(gx));
+    l.setAttribute('y1', toY(yMin)); l.setAttribute('y2', toY(yMax));
+    gridG.appendChild(l);
+  }
+  for(let gy = Math.ceil(yMin); gy <= Math.floor(yMax); gy++){
+    const l = document.createElementNS(svgNS,'line');
+    l.setAttribute('x1', toX(xMin)); l.setAttribute('x2', toX(xMax));
+    l.setAttribute('y1', toY(gy)); l.setAttribute('y2', toY(gy));
+    gridG.appendChild(l);
+  }
+  // axes themselves (x=0, y=0)
+  const xAxis = document.createElementNS(svgNS,'line');
+  xAxis.setAttribute('x1', toX(xMin)); xAxis.setAttribute('x2', toX(xMax));
+  xAxis.setAttribute('y1', toY(0)); xAxis.setAttribute('y2', toY(0));
+  axesG.appendChild(xAxis);
+  const yAxis = document.createElementNS(svgNS,'line');
+  yAxis.setAttribute('x1', toX(0)); yAxis.setAttribute('x2', toX(0));
+  yAxis.setAttribute('y1', toY(yMin)); yAxis.setAttribute('y2', toY(yMax));
+  axesG.appendChild(yAxis);
+  // axis number labels (integers, skip 0)
+  for(let gx = Math.ceil(xMin); gx <= Math.floor(xMax); gx++){
+    if(gx === 0) continue;
+    const t = document.createElementNS(svgNS,'text');
+    t.setAttribute('x', toX(gx)-3); t.setAttribute('y', toY(0)+16);
+    t.setAttribute('font-size','11'); t.setAttribute('fill','#8A8371');
+    t.textContent = gx;
+    axesG.appendChild(t);
+  }
+  for(let gy = Math.ceil(yMin); gy <= Math.floor(yMax); gy++){
+    if(gy === 0) continue;
+    const t = document.createElementNS(svgNS,'text');
+    t.setAttribute('x', toX(0)+6); t.setAttribute('y', toY(gy)+4);
+    t.setAttribute('font-size','11'); t.setAttribute('fill','#8A8371');
+    t.textContent = gy;
+    axesG.appendChild(t);
+  }
+
+  // curve path (sampled)
+  const curvePath = document.getElementById('curvePath');
+  let d = '';
+  const steps = 200;
+  for(let i=0;i<=steps;i++){
+    const x = xMin + (xMax-xMin) * i/steps;
+    const y = f(x);
+    const px = toX(x), py = toY(Math.min(Math.max(y,yMin-2),yMax+2));
+    d += (i===0 ? 'M ' : 'L ') + px.toFixed(2) + ' ' + py.toFixed(2) + ' ';
+  }
+  curvePath.setAttribute('d', d.trim());
+
+  // fixed point P
+  const pointP = document.getElementById('pointP');
+  const labelP = document.getElementById('labelP');
+  pointP.setAttribute('cx', toX(a)); pointP.setAttribute('cy', toY(fa));
+  labelP.setAttribute('x', toX(a)-24); labelP.setAttribute('y', toY(fa)+20);
+  labelP.textContent = 'P(1, 1)';
+
+  document.getElementById('curveTag').setAttribute('x', toX(2.65));
+  document.getElementById('curveTag').setAttribute('y', toY(f(2.65))-10);
+
+  // tangent line: slope 2*a = 2, through P
+  const tangentSlope = 2*a;
+  const tangentLine = document.getElementById('tangentLine');
+  function setLineThrough(el, x0, y0, m, xa, xb){
+    const ya = y0 + m*(xa-x0);
+    const yb = y0 + m*(xb-x0);
+    el.setAttribute('x1', toX(xa)); el.setAttribute('y1', toY(ya));
+    el.setAttribute('x2', toX(xb)); el.setAttribute('y2', toY(yb));
+  }
+  setLineThrough(tangentLine, a, fa, tangentSlope, xMin-1, xMax+1);
+
+  const secantLine = document.getElementById('secantLine');
+  const pointQ = document.getElementById('pointQ');
+  const labelQ = document.getElementById('labelQ');
+  const dxLine = document.getElementById('dxLine');
+  const dyLine = document.getElementById('dyLine');
+  const dxLabel = document.getElementById('dxLabel');
+  const dyLabel = document.getElementById('dyLabel');
+
+  const dxSlider = document.getElementById('dxSlider');
+  const dxAbsVal = document.getElementById('dxAbsVal');
+  const dirPos = document.getElementById('dirPos');
+  const dirNeg = document.getElementById('dirNeg');
+  const playBtn = document.getElementById('playBtn');
+  const limitBox = document.getElementById('limitBox');
+
+  const statDx = document.getElementById('statDx');
+  const statQ = document.getElementById('statQ');
+  const statDy = document.getElementById('statDy');
+  const statSlope = document.getElementById('statSlope');
+
+  let sign = 1;
+  let playing = false;
+  let playTimer = null;
+
+  function render(){
+    const absDx = parseFloat(dxSlider.value);
+    const dx = sign * absDx;
+    const qx = a + dx;
+    const qy = f(qx);
+    const dy = qy - fa;
+    const slope = dy / dx;
+
+    pointQ.setAttribute('cx', toX(qx));
+    pointQ.setAttribute('cy', toY(qy));
+    const labelOffsetX = sign > 0 ? 10 : -66;
+    labelQ.setAttribute('x', toX(qx)+labelOffsetX);
+    labelQ.setAttribute('y', toY(qy) - (sign>0 ? -18 : 8));
+    labelQ.textContent = 'Q(' + qx.toFixed(2) + ', ' + qy.toFixed(2) + ')';
+
+    setLineThrough(secantLine, a, fa, slope, xMin-1, xMax+1);
+
+    // right-triangle guide: horizontal Δx leg (P -> R), vertical Δy leg (R -> Q)
+    const rx = toX(qx), ry = toY(fa);
+    dxLine.setAttribute('x1', toX(a)); dxLine.setAttribute('y1', ry);
+    dxLine.setAttribute('x2', rx); dxLine.setAttribute('y2', ry);
+    dyLine.setAttribute('x1', rx); dyLine.setAttribute('y1', ry);
+    dyLine.setAttribute('x2', rx); dyLine.setAttribute('y2', toY(qy));
+
+    const dxMidX = (toX(a) + rx) / 2;
+    dxLabel.setAttribute('x', dxMidX - 10);
+    dxLabel.setAttribute('y', ry + 18);
+    dxLabel.textContent = 'Δx';
+
+    const dyMidY = (ry + toY(qy)) / 2;
+    const dyLabelX = sign > 0 ? rx + 8 : rx - 26;
+    dyLabel.setAttribute('x', dyLabelX);
+    dyLabel.setAttribute('y', dyMidY + 4);
+    dyLabel.textContent = 'Δy';
+
+    dxAbsVal.textContent = '|Δx| = ' + absDx.toFixed(2);
+    statDx.textContent = dx.toFixed(4);
+    statQ.textContent = '(' + qx.toFixed(3) + ', ' + qy.toFixed(3) + ')';
+    statDy.textContent = dy.toFixed(4);
+    statSlope.textContent = slope.toFixed(4);
+
+    if(absDx < 0.12){
+      limitBox.classList.add('near');
+    } else {
+      limitBox.classList.remove('near');
+    }
+  }
+
+  dxSlider.addEventListener('input', render);
+
+  dirPos.addEventListener('click', ()=>{
+    sign = 1;
+    dirPos.classList.add('active');
+    dirNeg.classList.remove('active');
+    render();
+  });
+  dirNeg.addEventListener('click', ()=>{
+    sign = -1;
+    dirNeg.classList.add('active');
+    dirPos.classList.remove('active');
+    render();
+  });
+
+  function stopPlay(){
+    playing = false;
+    if(playTimer) clearInterval(playTimer);
+    playBtn.textContent = 'Δx를 0으로 서서히 줄이기 ▶';
+  }
+
+  playBtn.addEventListener('click', ()=>{
+    if(playing){ stopPlay(); return; }
+    playing = true;
+    playBtn.textContent = '멈추기 ❚❚';
+    dxSlider.value = 2.2;
+    render();
+    playTimer = setInterval(()=>{
+      let v = parseFloat(dxSlider.value);
+      v = v * 0.965;
+      if(v <= 0.035){
+        dxSlider.value = 0.03;
+        render();
+        stopPlay();
+        return;
+      }
+      dxSlider.value = v;
+      render();
+    }, 30);
+  });
+
+  render();
+})();
+
+// --- generic f(x) illustrative diagram (image 2 style) ---
+(function(){
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById('genGraph');
+
+  // cubic bezier control points (pixel space), monotonically increasing curve
+  const P0 = {x:55, y:300}, P1 = {x:170, y:275}, P2 = {x:270, y:175}, P3 = {x:435, y:45};
+
+  function bez(t){
+    const mt = 1 - t;
+    return {
+      x: mt*mt*mt*P0.x + 3*mt*mt*t*P1.x + 3*mt*t*t*P2.x + t*t*t*P3.x,
+      y: mt*mt*mt*P0.y + 3*mt*mt*t*P1.y + 3*mt*t*t*P2.y + t*t*t*P3.y
+    };
+  }
+  function bezDeriv(t){
+    const mt = 1 - t;
+    return {
+      x: 3*mt*mt*(P1.x-P0.x) + 6*mt*t*(P2.x-P1.x) + 3*t*t*(P3.x-P2.x),
+      y: 3*mt*mt*(P1.y-P0.y) + 6*mt*t*(P2.y-P1.y) + 3*t*t*(P3.y-P2.y)
+    };
+  }
+
+  const tP = 0.30, tQ = 0.72;
+  const P = bez(tP), Q = bez(tQ);
+  const tangentDir = bezDeriv(tP);
+  const tangentLen = 90;
+  const tMag = Math.hypot(tangentDir.x, tangentDir.y);
+  const ux = tangentDir.x / tMag, uy = tangentDir.y / tMag;
+
+  // axes
+  const axes = document.getElementById('genAxes');
+  const axisOriginX = 40, axisOriginY = 330;
+  const xAxis = document.createElementNS(svgNS,'line');
+  xAxis.setAttribute('x1', axisOriginX); xAxis.setAttribute('y1', axisOriginY);
+  xAxis.setAttribute('x2', 460); xAxis.setAttribute('y2', axisOriginY);
+  axes.appendChild(xAxis);
+  const yAxis = document.createElementNS(svgNS,'line');
+  yAxis.setAttribute('x1', axisOriginX); yAxis.setAttribute('y1', axisOriginY);
+  yAxis.setAttribute('x2', axisOriginX); yAxis.setAttribute('y2', 20);
+  axes.appendChild(yAxis);
+
+  // curve
+  const curve = document.getElementById('genCurve');
+  curve.setAttribute('d',
+    'M ' + P0.x + ' ' + P0.y +
+    ' C ' + P1.x + ' ' + P1.y + ', ' + P2.x + ' ' + P2.y + ', ' + P3.x + ' ' + P3.y);
+
+  // tangent line through P, extended both directions along curve derivative
+  const tanA = {x: P.x - ux*tangentLen*0.45, y: P.y - uy*tangentLen*0.45};
+  const tanB = {x: P.x + ux*tangentLen*1.5, y: P.y + uy*tangentLen*1.5};
+  const tangent = document.getElementById('genTangent');
+  tangent.setAttribute('x1', tanA.x); tangent.setAttribute('y1', tanA.y);
+  tangent.setAttribute('x2', tanB.x); tangent.setAttribute('y2', tanB.y);
+
+  // secant line P -> Q
+  const secant = document.getElementById('genSecant');
+  secant.setAttribute('x1', P.x); secant.setAttribute('y1', P.y);
+  secant.setAttribute('x2', Q.x); secant.setAttribute('y2', Q.y);
+
+  // right-triangle guide: horizontal Δx (P -> R), vertical Δy (R -> Q)
+  const R = {x: Q.x, y: P.y};
+  const genDx = document.getElementById('genDx');
+  genDx.setAttribute('x1', P.x); genDx.setAttribute('y1', P.y);
+  genDx.setAttribute('x2', R.x); genDx.setAttribute('y2', R.y);
+  const genDy = document.getElementById('genDy');
+  genDy.setAttribute('x1', R.x); genDy.setAttribute('y1', R.y);
+  genDy.setAttribute('x2', Q.x); genDy.setAttribute('y2', Q.y);
+
+  // points
+  document.getElementById('genP').setAttribute('cx', P.x);
+  document.getElementById('genP').setAttribute('cy', P.y);
+  document.getElementById('genQ').setAttribute('cx', Q.x);
+  document.getElementById('genQ').setAttribute('cy', Q.y);
+
+  // labels
+  const labels = document.getElementById('genLabels');
+  function addText(x, y, text, opts){
+    opts = opts || {};
+    const t = document.createElementNS(svgNS,'text');
+    t.setAttribute('x', x); t.setAttribute('y', y);
+    t.setAttribute('font-size', opts.size || 13.5);
+    t.setAttribute('fill', opts.fill || '#75705F');
+    if(opts.italic) t.setAttribute('font-style','italic');
+    t.textContent = text;
+    labels.appendChild(t);
+  }
+  addText(axisOriginX-14, axisOriginY+16, 'O', {italic:true, size:13, fill:'#8A8371'});
+  addText(P.x-22, P.y+20, 'P', {italic:true, size:15, fill:'#1A1A1A'});
+  addText(P.x-8, P.y+36, '(a, f(a))', {size:11.5});
+  addText(Q.x+8, Q.y-10, 'Q', {italic:true, size:15, fill:'var(--secant)'});
+  addText(Q.x+8, Q.y+8, '(a+Δx, f(a+Δx))', {size:11.5, fill:'var(--secant)'});
+  addText(tanB.x-40, tanB.y-8, 'l', {italic:true, size:14, fill:'var(--tangent)'});
+  addText(P3.x-60, P3.y+18, 'y = f(x)', {italic:true, size:14, fill:'var(--curve)'});
+  addText((P.x+R.x)/2 - 10, R.y+18, 'Δx', {size:12.5});
+  addText(R.x+8, (R.y+Q.y)/2, 'Δy', {size:12.5});
+})();
+</script>
+
+</body>
+</html>
