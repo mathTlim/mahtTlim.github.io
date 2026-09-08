@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사잇값 정리 - 별 모양 도형 넓이 이등분</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: #f7f6f2;
+    color: #2c2c2a;
+    margin: 0;
+    padding: 24px 16px;
+    display: flex;
+    justify-content: center;
+  }
+  .wrap { max-width: 760px; width: 100%; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 6px; }
+  p.sub { color: #5f5e5a; font-size: 14px; margin: 0 0 24px; line-height: 1.6; }
+  .card {
+    background: #fff;
+    border: 1px solid #e3e1d8;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .row { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  canvas#star { flex-shrink: 0; border-radius: 8px; background: #f7f6f2; }
+  .controls { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 14px; }
+  label { font-size: 13px; color: #5f5e5a; }
+  input[type=range] { flex: 1; accent-color: #534AB7; }
+  .slider-row { display: flex; align-items: center; gap: 12px; }
+  .k-out { font-size: 15px; font-weight: 600; min-width: 60px; }
+  .info-box { background: #f1efe8; border-radius: 10px; padding: 12px 16px; }
+  .info-box p { margin: 0 0 4px; font-size: 13px; }
+  .f-val { font-size: 24px; font-weight: 600; margin: 0; }
+  button {
+    align-self: flex-start;
+    background: #fff;
+    border: 1px solid #b4b2a9;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button:hover { background: #f1efe8; }
+  button:active { transform: scale(0.98); }
+  .chart-box { position: relative; height: 220px; margin-top: 8px; }
+  .explain { font-size: 14px; line-height: 1.8; }
+  .explain code { background: #f1efe8; padding: 2px 5px; border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>사잇값 정리: 별 모양 도형의 넓이 이등분</h1>
+  <p class="sub">별 모양 도형과 직선 x=k (0≤k≤3)를 좌표평면 위에 나타냈을 때, 직선 x=k의 왼쪽 부분의 넓이를 f(k)라 하면, f(k)는 닫힌구간 [0,3]에서 연속함수입니다. 직선 x=k가 도형의 넓이를 이등분할 수 있음을 사잇값 정리로 확인해보세요.</p>
+
+  <div class="card">
+    <div class="row">
+      <canvas id="star" width="360" height="260"></canvas>
+      <div class="controls">
+        <div>
+          <label>직선 x = k (0 ≤ k ≤ 3)</label>
+          <div class="slider-row">
+            <input type="range" min="0" max="3" step="0.02" value="0" id="k">
+            <span id="kOut" class="k-out">k=0.00</span>
+          </div>
+        </div>
+        <div class="info-box">
+          <p>f(k) = 직선 왼쪽 부분의 넓이 (전체 대비 비율)</p>
+          <p class="f-val" id="fOut">0%</p>
+        </div>
+        <button id="findBtn">이등분점 찾기 (f(k)=50%) →</button>
+      </div>
+    </div>
+    <div class="chart-box">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+
+  <div class="card explain">
+    <p>f(0)은 별 모양에서 x=0보다 왼쪽 부분의 넓이로, 전체 넓이의 0%보다 큽니다 (별 끝부분이 y축 왼쪽으로 살짝 나와 있기 때문).</p>
+    <p>f(3)은 별 전체가 x=3보다 왼쪽에 있으므로 전체 넓이의 <code>100%</code>입니다.</p>
+    <p>f(k)는 연속함수이고 <code>f(0) &lt; 50% &lt; f(3) = 100%</code>이므로, <strong>사잇값 정리에 의해 f(k) = 50%(전체 넓이의 절반)가 되는 k가 [0, 3] 안에 반드시 존재</strong>합니다.</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const W=360,H=260;
+const xMin=-0.6,xMax=3.4,yMin=-1.6,yMax=1.6;
+const sx=W/(xMax-xMin), sy=H/(yMax-yMin);
+function toPx(x,y){return [ (x-xMin)*sx, H-(y-yMin)*sy ];}
+
+function starPts(cx,cy,rO,rI,rot){
+  const pts=[];
+  for(let i=0;i<10;i++){
+    const ang=rot+i*Math.PI/5;
+    const r=i%2===0?rO:rI;
+    pts.push([cx+r*Math.cos(ang),cy+r*Math.sin(ang)]);
+  }
+  return pts;
+}
+const dataPts=starPts(1.3,0,1.35,0.55,-Math.PI/2-0.35);
+const pxPts=dataPts.map(p=>toPx(p[0],p[1]));
+
+function drawStarPath(ctx){
+  ctx.beginPath();
+  ctx.moveTo(pxPts[0][0],pxPts[0][1]);
+  for(let i=1;i<pxPts.length;i++) ctx.lineTo(pxPts[i][0],pxPts[i][1]);
+  ctx.closePath();
+}
+
+// offscreen canvas for pixel-based area counting
+const off=document.createElement('canvas');off.width=W;off.height=H;
+const octx=off.getContext('2d');
+drawStarPath(octx);octx.fillStyle='#000';octx.fill();
+const idata=octx.getImageData(0,0,W,H).data;
+const colCount=new Array(W).fill(0);
+for(let x=0;x<W;x++){
+  let c=0;
+  for(let y=0;y<H;y++){ if(idata[(y*W+x)*4+3]>128) c++; }
+  colCount[x]=c;
+}
+const cum=new Array(W).fill(0);
+let run=0;
+for(let x=0;x<W;x++){ run+=colCount[x]; cum[x]=run; }
+const total=cum[W-1];
+
+function fOfK(k){
+  const px=Math.max(0,Math.min(W-1,Math.round((k-xMin)*sx)));
+  return cum[px]/total*100;
+}
+
+const canvas=document.getElementById('star');
+const ctx=canvas.getContext('2d');
+
+function render(k){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#b4b2a9';ctx.lineWidth=1;
+  ctx.beginPath();
+  const o=toPx(0,0);
+  ctx.moveTo(0,o[1]);ctx.lineTo(W,o[1]);
+  ctx.moveTo(o[0],0);ctx.lineTo(o[0],H);
+  ctx.stroke();
+  ctx.fillStyle='#888780';ctx.font='11px sans-serif';
+  [0,1,2,3].forEach(v=>{
+    const p=toPx(v,0);
+    ctx.fillText(v,p[0]-3,o[1]+14);
+  });
+
+  drawStarPath(ctx);
+  ctx.fillStyle='rgba(175,169,236,0.5)';
+  ctx.fill();
+  ctx.strokeStyle='#534AB7';ctx.lineWidth=1.5;
+  ctx.stroke();
+
+  const kPx=toPx(k,0)[0];
+  ctx.save();
+  drawStarPath(ctx);
+  ctx.clip();
+  ctx.fillStyle='rgba(216,90,48,0.45)';
+  ctx.fillRect(0,0,kPx,H);
+  ctx.restore();
+
+  ctx.strokeStyle='#D85A30';ctx.lineWidth=1.5;
+  ctx.setLineDash([4,3]);
+  ctx.beginPath();
+  ctx.moveTo(kPx,0);ctx.lineTo(kPx,H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+const kEl=document.getElementById('k'),kOut=document.getElementById('kOut'),fOut=document.getElementById('fOut');
+const cctx=document.getElementById('chart').getContext('2d');
+const labels=[],data=[];
+for(let k=0;k<=3;k+=0.06){
+  labels.push(k.toFixed(2));
+  data.push(Number(fOfK(k).toFixed(1)));
+}
+
+const chart=new Chart(cctx,{
+  type:'line',
+  data:{
+    labels,
+    datasets:[
+      {data,borderColor:'#534AB7',borderWidth:2,pointRadius:0,tension:0.25},
+      {data:labels.map(()=>50),borderColor:'rgba(136,135,128,0.5)',borderWidth:1,pointRadius:0,borderDash:[4,4]}
+    ]
+  },
+  options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{title:{display:true,text:'k'},ticks:{maxTicksLimit:7}},
+      y:{title:{display:true,text:'f(k) %'},min:0,max:100}
+    }
+  }
+});
+
+function update(k){
+  kOut.textContent='k='+k.toFixed(2);
+  render(k);
+  const f=fOfK(k);
+  fOut.textContent=f.toFixed(1)+'%';
+  fOut.style.color=Math.abs(f-50)<1 ? '#0F6E56' : '#2c2c2a';
+}
+
+kEl.addEventListener('input',e=>update(Number(e.target.value)));
+
+document.getElementById('findBtn').addEventListener('click',()=>{
+  let lo=0,hi=3;
+  const g=k=>fOfK(k)-50;
+  for(let i=0;i<40;i++){
+    const mid=(lo+hi)/2;
+    if(g(lo)*g(mid)<=0){hi=mid;} else {lo=mid;}
+  }
+  const root=(lo+hi)/2;
+  kEl.value=root;
+  update(root);
+});
+
+update(0);
+</script>
+</body>
+</html>
